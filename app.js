@@ -16,23 +16,44 @@ var connector = new builder.ChatConnector({
 // Listen for messages from users
 server.post('/api/messages', connector.listen());
 
-// Receive messages from the user and respond by echoing each message back (prefixed with 'You said:')
-var bot = new builder.UniversalBot(connector, function (session) {
-    let message = session.message;
-    if (message.attachments && message.attachments.length > 0) {
-        let attachment = message.attachments[0];
+const inMemoryStroage = builder.MemoryBotStorage();
 
-        session.send({
-            text: 'You sent:',
-            attachments: [
-                {
-                    contentType: attachment.contentType,
-                    contentUrl: attachment.contentUrl,
-                    name: attachment.name
-                }
-            ]
-        })
-    } else {
-        session.send("You said: %s", session.message.text);
+// Receive messages from the user and respond by echoing each message back (prefixed with 'You said:')
+var bot = new builder.UniversalBot(connector, [
+    function (session) {
+        session.send('This is the bot for you.')
+        session.beginDialog('greetings', session.userData.profile);
+    },
+    function (session, results) {
+        if (results.response) {
+            let profile = results.response;
+            session.userData.profile = profile;
+
+            session.send(`Hi, ${profile.name}!`);
+            return session.endDialog(`Thank you.`);
+        } else {
+            return session.endDialog(`Bye.`);
+        }
     }
-});
+]).set('storage', inMemoryStroage);
+
+bot.dialog('greetings', [
+    function(session, args, next) {
+        let profile = args || {};
+        session.dialogData.profile = profile;
+
+        if (!profile.name) {
+            session.send('Nice to meet you!')
+            builder.Prompts.text(session, 'What is your name?');
+        } else {
+            next();
+        }
+    },
+    function (session, results) {
+        if (results.response) {
+            session.dialogData.profile.name = results.response;
+        }
+
+        session.endDialogWithResult({response: { name: session.dialogData.profile.name }});
+    }
+]);
