@@ -23,10 +23,14 @@ const inMemoryStorage = new builder.MemoryBotStorage();
 // Receive messages from the user and respond by echoing each message back (prefixed with 'You said:')
 var bot = new builder.UniversalBot(connector, [
   async function(session) {
-    const puns = await dajare(session.message.text);
-    const pun = _.sample(puns);
+    try {
+      const puns = await dajare(session.message.text);
+      const pun = _.sample(puns);
 
-    session.send(pun);
-    return session.endDialog();
+      session.send(pun);
+      return session.endDialog();
+    } catch (err) {
+      console.error(err);
+    }
   }
 ]).set("storage", inMemoryStorage);
