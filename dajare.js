@@ -1,19 +1,15 @@
-const request = require('request-promise-native');
+const request = require("request-promise-native");
 
 fetch = async function(text) {
-    const options = {
-        json: true,
-        body: {
-            text: text
-        }
-    }
-    try {
-        const response = await request.post(process.env.DAJARE_API_ENDPOINT, options);
+  const options = {
+    uri: process.env.DAJARE_API_ENDPOINT,
+    json: true,
+    body: { text }
+  };
 
-        return response['puns'];
-    } catch(err) {
-        throw err;
-    }
+  const response = await request.post(options);
+
+  return response["puns"];
 };
 
 module.exports = fetch;
